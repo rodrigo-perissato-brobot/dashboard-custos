@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Painel de Custos — Brobot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E" />
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: rgba(11, 11, 11, 0.10);
+    --gridline: #e1e0d9;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --border: rgba(255, 255, 255, 0.10);
+      --gridline: #2c2c2a;
+      --good: #0ca30c;
+      --warning: #fab219;
+      --critical: #e66767;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 60px; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .atualizado { color: var(--text-muted); font-size: 13px; }
+  section { margin-bottom: 32px; }
+  h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--gridline);
+    padding-bottom: 8px;
+    margin: 0 0 14px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card .nome { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+  .card .saldo {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-variant-numeric: proportional-nums;
+  }
+  .card .linha {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 4px 0;
+  }
+  .card .linha .valor { color: var(--text-primary); font-weight: 500; }
+  .nota {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-top: 4px;
+  }
+  .badge.warning { color: var(--warning); background: color-mix(in srgb, var(--warning) 15%, transparent); }
+  .badge.critical { color: var(--critical); background: color-mix(in srgb, var(--critical) 15%, transparent); }
+  .badge.good { color: var(--good); background: color-mix(in srgb, var(--good) 15%, transparent); }
+  .erro-msg { font-size: 12px; color: var(--text-muted); margin-top: 6px; word-break: break-word; }
+  footer { color: var(--text-muted); font-size: 12px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💰 Painel de Custos</h1>
+    <div class="atualizado" id="atualizado"></div>
+  </header>
+  <main id="secoes"></main>
+  <footer>Saldo consultado direto na API de cada serviço. Quando o serviço não expõe gasto/uso do dia, o custo é estimado pela diferença entre o saldo de hoje e o de ontem. O selo 🔺 aparece quando o custo do dia passa a média dos dias anteriores em mais de 10%.</footer>
+</div>
+<script>
+  const DADOS = {"atualizadoEm":"2026-08-07T12:29:50.001Z","servicos":[{"id":"twoCaptcha","nome":"2Captcha","categoria":"anti-captcha","moeda":"USD","saldo":690.99692,"custoHoje":30.807199999999966,"fonte":"delta","media":null,"alerta":false,"alertaNovo":false},{"id":"antiCaptcha","nome":"Anti-Captcha","categoria":"anti-captcha","moeda":"USD","saldo":27.7411,"consumoHoje":0,"unidadeConsumo":"captchas","custoHoje":0,"fonte":"api","media":null,"alerta":false,"alertaNovo":false},{"id":"capsolver","nome":"CapSolver","categoria":"anti-captcha","moeda":"USD","saldo":486.7471,"custoHoje":37.82139999999998,"fonte":"delta","media":null,"alerta":false,"alertaNovo":false},{"id":"deathByCaptcha","nome":"Death By Captcha","categoria":"anti-captcha","moeda":"USD","saldo":199.687888,"custoHoje":0,"fonte":"delta","media":null,"alerta":false,"alertaNovo":false},{"id":"powerSistemas","nome":"Power Sistemas","categoria":"anti-captcha","moeda":"BRL","saldo":1575.36,"custoHoje":3669.0300000000007,"fonte":"delta","media":null,"alerta":false,"alertaNovo":false},{"id":"brightData","nome":"Bright Data","categoria":"proxy","moeda":"USD","saldo":850.19,"custoHoje":46.51999999999998,"fonte":"delta","media":null,"alerta":false,"alertaNovo":false},{"id":"dataImpulse","nome":"DataImpulse","categoria":"proxy","moeda":"USD","erro":"sem credencial"}]};
+
+  const NOMES_CATEGORIA = {
+    'anti-captcha': 'Anti-captcha',
+    'proxy': 'Proxy',
+  };
+
+  function formatMoeda(valor, moeda) {
+    if (valor === null || valor === undefined) return '—';
+    try {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: moeda || 'USD' }).format(valor);
+    } catch {
+      return `${valor.toFixed(2)} ${moeda || ''}`;
+    }
+  }
+
+  function renderCard(s) {
+    const nome = document.createElement('div');
+    nome.className = 'nome';
+    nome.textContent = s.nome;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.appendChild(nome);
+
+    if (s.erro) {
+      const saldo = document.createElement('div');
+      saldo.className = 'saldo';
+      saldo.textContent = '—';
+      card.appendChild(saldo);
+
+      const badge = document.createElement('div');
+      const semCredencial = s.erro === 'sem credencial';
+      badge.className = 'badge ' + (semCredencial ? 'warning' : 'critical');
+      badge.textContent = semCredencial ? '⚠ sem credencial' : '✕ falha na consulta';
+      card.appendChild(badge);
+
+      if (!semCredencial) {
+        const msg = document.createElement('div');
+        msg.className = 'erro-msg';
+        msg.textContent = s.erro;
+        card.appendChild(msg);
+      }
+      return card;
+    }
+
+    const saldo = document.createElement('div');
+    saldo.className = 'saldo';
+    saldo.textContent = formatMoeda(s.saldo, s.moeda);
+    card.appendChild(saldo);
+
+    if (typeof s.consumoHoje === 'number') {
+      const linha = document.createElement('div');
+      linha.className = 'linha';
+      linha.innerHTML = `<span>Consumo hoje</span><span class="valor">${s.consumoHoje} ${s.unidadeConsumo || ''}</span>`;
+      card.appendChild(linha);
+    }
+
+    if (s.alerta) {
+      const badge = document.createElement('div');
+      badge.className = 'badge critical';
+      const pct = s.media ? Math.round((s.custoHoje / s.media - 1) * 100) : null;
+      badge.textContent = pct !== null ? `🔺 ${pct}% acima da média` : '🔺 acima da média';
+      card.appendChild(badge);
+    }
+
+    if (typeof s.custoHoje === 'number') {
+      const linha = document.createElement('div');
+      linha.className = 'linha';
+      linha.innerHTML = `<span>Custo hoje</span><span class="valor">${formatMoeda(s.custoHoje, s.moeda)}</span>`;
+      card.appendChild(linha);
+
+      if (typeof s.media === 'number') {
+        const linhaMedia = document.createElement('div');
+        linhaMedia.className = 'linha';
+        linhaMedia.innerHTML = `<span>Média (dias anteriores)</span><span class="valor">${formatMoeda(s.media, s.moeda)}</span>`;
+        card.appendChild(linhaMedia);
+      }
+
+      const nota = document.createElement('div');
+      nota.className = 'nota';
+      nota.textContent = s.fonte === 'api' ? 'via API do serviço' : 'estimado pela diferença de saldo';
+      card.appendChild(nota);
+    } else if (s.fonte === 'sem_historico') {
+      const nota = document.createElement('div');
+      nota.className = 'nota';
+      nota.textContent = 'Ainda sem histórico — custo do dia aparece a partir de amanhã';
+      card.appendChild(nota);
+    } else if (s.fonte === 'recarga_detectada') {
+      const nota = document.createElement('div');
+      nota.className = 'nota';
+      nota.textContent = 'Recarga detectada hoje — custo do dia não calculado';
+      card.appendChild(nota);
+    }
+
+    return card;
+  }
+
+  document.getElementById('atualizado').textContent =
+    'Atualizado em ' + new Date(DADOS.atualizadoEm).toLocaleString('pt-BR');
+
+  const porCategoria = new Map();
+  for (const s of DADOS.servicos) {
+    if (!porCategoria.has(s.categoria)) porCategoria.set(s.categoria, []);
+    porCategoria.get(s.categoria).push(s);
+  }
+
+  const secoes = document.getElementById('secoes');
+  for (const [categoria, servicos] of porCategoria) {
+    const section = document.createElement('section');
+    const h2 = document.createElement('h2');
+    h2.textContent = NOMES_CATEGORIA[categoria] || categoria;
+    section.appendChild(h2);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    servicos.forEach((s) => grid.appendChild(renderCard(s)));
+    section.appendChild(grid);
+
+    secoes.appendChild(section);
+  }
+</script>
+</body>
+</html>
