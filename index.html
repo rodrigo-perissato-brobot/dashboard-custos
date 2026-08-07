@@ -101,6 +101,63 @@
   .badge.good { color: var(--good); background: color-mix(in srgb, var(--good) 15%, transparent); }
   .erro-msg { font-size: 12px; color: var(--text-muted); margin-top: 6px; word-break: break-word; }
   footer { color: var(--text-muted); font-size: 12px; margin-top: 40px; }
+
+  .card { cursor: pointer; }
+  .card:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, var(--border)); }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .overlay.aberto { display: flex; }
+  .modal {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+  }
+  .modal-header h3 { margin: 0; font-size: 16px; }
+  .modal-fechar {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 12px;
+  }
+  .modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .modal th {
+    text-align: right;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--gridline);
+  }
+  .modal th:first-child, .modal td:first-child { text-align: left; }
+  .modal td {
+    text-align: right;
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--gridline);
+    font-variant-numeric: tabular-nums;
+  }
+  .modal .vazio { color: var(--text-muted); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -110,10 +167,19 @@
     <div class="atualizado" id="atualizado"></div>
   </header>
   <main id="secoes"></main>
-  <footer>Saldo consultado direto na API de cada serviço. Quando o serviço não expõe gasto/uso do dia, o custo é estimado pela diferença entre o saldo de hoje e o de ontem. O selo 🔺 aparece quando o custo do dia passa a média dos dias anteriores em mais de 10%.</footer>
+  <footer>Saldo consultado direto na API de cada serviço. Quando o serviço não expõe gasto/uso do dia, o custo é estimado pela diferença entre o saldo de hoje e o de ontem. O selo 🔺 aparece quando o custo do dia passa a média dos dias anteriores em mais de 10%. Clique num card pra ver o detalhe dia a dia.</footer>
+</div>
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h3 id="modal-titulo"></h3>
+      <button class="modal-fechar" id="modal-fechar" aria-label="Fechar">✕</button>
+    </div>
+    <div id="modal-corpo"></div>
+  </div>
 </div>
 <script>
-  const DADOS = {"atualizadoEm":"2026-08-07T12:36:04.055Z","servicos":[{"id":"twoCaptcha","nome":"2Captcha","categoria":"anti-captcha","moeda":"USD","saldo":690.94823,"custoHoje":30.855890000000045,"fonte":"delta","media":null,"alerta":false},{"id":"antiCaptcha","nome":"Anti-Captcha","categoria":"anti-captcha","moeda":"USD","saldo":27.7411,"consumoHoje":0,"unidadeConsumo":"captchas","custoHoje":0,"fonte":"api","media":null,"alerta":false},{"id":"capsolver","nome":"CapSolver","categoria":"anti-captcha","moeda":"USD","saldo":486.7457,"custoHoje":37.82279999999997,"fonte":"delta","media":null,"alerta":false},{"id":"deathByCaptcha","nome":"Death By Captcha","categoria":"anti-captcha","moeda":"USD","saldo":199.687888,"custoHoje":0,"fonte":"delta","media":null,"alerta":false},{"id":"powerSistemas","nome":"Power Sistemas","categoria":"anti-captcha","moeda":"BRL","saldo":1560.51,"custoHoje":3683.88,"fonte":"delta","media":null,"alerta":false},{"id":"brightData","nome":"Bright Data","categoria":"proxy","moeda":"USD","saldo":849.9,"custoHoje":46.81000000000006,"fonte":"delta","media":null,"alerta":false},{"id":"dataImpulse","nome":"DataImpulse","categoria":"proxy","moeda":"USD","erro":"sem credencial"}]};
+  const DADOS = {"atualizadoEm":"2026-08-07T13:31:44.566Z","servicos":[{"id":"twoCaptcha","nome":"2Captcha","categoria":"anti-captcha","moeda":"USD","saldo":690.24346,"custoHoje":31.560659999999984,"fonte":"delta","media":null,"alerta":false,"historico":[{"data":"2026-08-07","saldo":690.24346,"custoHoje":31.560659999999984},{"data":"2026-08-06","saldo":721.80412},{"data":"2026-08-05","saldo":739.63396}]},{"id":"antiCaptcha","nome":"Anti-Captcha","categoria":"anti-captcha","moeda":"USD","saldo":27.7391,"consumoHoje":0,"unidadeConsumo":"captchas","custoHoje":0,"fonte":"api","media":null,"alerta":false,"historico":[{"data":"2026-08-07","saldo":27.7391,"custoHoje":0}]},{"id":"capsolver","nome":"CapSolver","categoria":"anti-captcha","moeda":"USD","saldo":486.7215,"custoHoje":37.84699999999998,"fonte":"delta","media":null,"alerta":false,"historico":[{"data":"2026-08-07","saldo":486.7215,"custoHoje":37.84699999999998},{"data":"2026-08-05","saldo":524.5685}]},{"id":"deathByCaptcha","nome":"Death By Captcha","categoria":"anti-captcha","moeda":"USD","saldo":199.687888,"custoHoje":0,"fonte":"delta","media":null,"alerta":false,"historico":[{"data":"2026-08-07","saldo":199.687888,"custoHoje":0},{"data":"2026-08-06","saldo":199.687888},{"data":"2026-08-05","saldo":199.687888}]},{"id":"powerSistemas","nome":"Power Sistemas","categoria":"anti-captcha","moeda":"BRL","saldo":768.80475,"custoHoje":2998.6897500000005,"fonte":"delta","media":1128.3919500000002,"alerta":true,"historico":[{"data":"2026-08-07","saldo":768.80475,"custoHoje":2998.6897500000005},{"data":"2026-08-06","saldo":3767.4945000000002,"custoHoje":2197.99125},{"data":"2026-08-05","saldo":5965.485750000001,"custoHoje":1323.09975},{"data":"2026-08-04","saldo":7288.5855,"custoHoje":1347.49125},{"data":"2026-08-03","saldo":8636.07675,"custoHoje":711.2700000000001},{"data":"2026-08-02","saldo":9347.34675,"custoHoje":62.1075},{"data":"2026-08-01","saldo":9409.45425,"custoHoje":null}]},{"id":"brightData","nome":"Bright Data","categoria":"proxy","moeda":"USD","saldo":845.86,"custoHoje":50.85000000000002,"fonte":"delta","media":null,"alerta":false,"historico":[{"data":"2026-08-07","saldo":845.86,"custoHoje":50.85000000000002},{"data":"2026-08-06","saldo":896.71},{"data":"2026-08-05","saldo":916.1}]},{"id":"dataImpulse","nome":"DataImpulse","categoria":"proxy","moeda":"USD","erro":"sem credencial","historico":[]}]};
 
   const NOMES_CATEGORIA = {
     'anti-captcha': 'Anti-captcha',
@@ -208,8 +274,49 @@
       card.appendChild(nota);
     }
 
+    card.addEventListener('click', () => abrirDetalhe(s));
+
     return card;
   }
+
+  function formatData(iso) {
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function abrirDetalhe(s) {
+    document.getElementById('modal-titulo').textContent = s.nome;
+    const corpo = document.getElementById('modal-corpo');
+    const historico = s.historico || [];
+
+    if (!historico.length) {
+      corpo.innerHTML = '<p class="vazio">Ainda sem dias registrados no histórico local.</p>';
+    } else {
+      const linhas = historico
+        .map(
+          (dia) =>
+            `<tr><td>${formatData(dia.data)}</td><td>${formatMoeda(dia.saldo, s.moeda)}</td><td>${
+              typeof dia.custoHoje === 'number' ? formatMoeda(dia.custoHoje, s.moeda) : '—'
+            }</td></tr>`
+        )
+        .join('');
+      corpo.innerHTML = `<table><thead><tr><th>Data</th><th>Saldo</th><th>Custo do dia</th></tr></thead><tbody>${linhas}</tbody></table>`;
+    }
+
+    document.getElementById('overlay').classList.add('aberto');
+  }
+
+  function fecharDetalhe() {
+    document.getElementById('overlay').classList.remove('aberto');
+  }
+
+  document.getElementById('modal-fechar').addEventListener('click', fecharDetalhe);
+  document.getElementById('overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'overlay') fecharDetalhe();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') fecharDetalhe();
+  });
 
   document.getElementById('atualizado').textContent =
     'Atualizado em ' + new Date(DADOS.atualizadoEm).toLocaleString('pt-BR');
